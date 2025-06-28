@@ -1,0 +1,124 @@
+{
+  "name": "WhatsApp Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "whatsapp-webhook",
+        "authentication": "basicAuth",
+        "responseMode": "responseNode",
+        "options": {
+          "ignoreBots": true
+        }
+      },
+      "id": "c9aa7cfa-763c-4d59-ae33-afff84d50f68",
+      "name": "WhatsApp Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "MetaWhatsAppCreds"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "temperature": 0.7,
+        "systemPrompt": "Você é um assistente de atendimento via WhatsApp",
+        "userPrompt": "={{$json[\"entry\"][0].changes[0].value.messages[0].text.body]}}"
+      },
+      "id": "e95f493d-f85e-4f10-8e34-7369a2b9c35b",
+      "name": "Evolution API",
+      "type": "n8n-nodes-evolution-api.evolutionApi",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ],
+      "credentials": {
+        "evolutionApi": {
+          "id": "EvolutionApiCreds"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "create",
+        "from": "whatsapp:+15551234567",
+        "to": "={{\"whatsapp:\" + $json[\"entry\"][0].changes[0].value.messages[0].from}}",
+        "text": "={{$node[\"Evolution API\"].json[\"choices\"][0].message.content}}"
+      },
+      "id": "fc5b3e57-b16f-456b-a97b-71c2cc9a38d4",
+      "name": "WhatsApp Reply",
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [
+        650,
+        300
+      ],
+      "credentials": {
+        "twilioApi": {
+          "id": "TwilioCreds"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "Mensagem recebida."
+      },
+      "id": "2afd7323-0c24-4678-bc9c-0ef238d1d4ee",
+      "name": "Responder",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        850,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "WhatsApp Webhook": {
+      "main": [
+        [
+          {
+            "node": "Evolution API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evolution API": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp Reply": {
+      "main": [
+        [
+          {
+            "node": "Responder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "meta": {
+    "instanceId": "cb484ba7b742928a2048bf8829668bed5b5ad9787579adea888f05980292a4a7"
+  }
+}

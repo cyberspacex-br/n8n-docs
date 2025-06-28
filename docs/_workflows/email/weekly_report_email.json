@@ -1,0 +1,127 @@
+{
+  "name": "Envio de Email Semanal",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * 1"
+            }
+          ]
+        }
+      },
+      "id": "1a2b3c4d-5e6f-7g8h-9i0j-k1l2m3n4o5p6",
+      "name": "Cron Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Configurar dados do email\nconst emailData = {\n  destinatario: process.env.REPORT_EMAIL,\n  assunto: 'Relat\u00f3rio Semanal - ' + new Date().toLocaleDateString('pt-BR'),\n  corpo: `\n    <h2>Relat\u00f3rio Semanal</h2>\n    <p>Ol\u00e1!</p>\n    <p>Este \u00e9 seu relat\u00f3rio semanal autom\u00e1tico enviado em ${new Date().toLocaleDateString('pt-BR')}.` +\n    `</p>\n    <ul>\n      <li>Status: Ativo</li>\n      <li>Data: ${new Date().toLocaleDateString('pt-BR')}</li>\n      <li>Hor\u00e1rio: ${new Date().toLocaleTimeString('pt-BR')}</li>\n    </ul>\n    <p>Atenciosamente,<br>Sistema Automatizado</p>\n  `\n};\n\nreturn [{ json: emailData }];"
+      },
+      "id": "2b3c4d5e-6f7g-8h9i-0j1k-l2m3n4o5p6q7",
+      "name": "Preparar Dados",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "nodeCredentialType": "smtpApi",
+        "resource": "email",
+        "operation": "send",
+        "toEmail": "={{ $json.destinatario }}",
+        "subject": "={{ $json.assunto }}",
+        "emailFormat": "html",
+        "html": "={{ $json.corpo }}",
+        "fromEmail": "sistema@suaempresa.com",
+        "fromName": "Sistema Automatizado",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "3c4d5e6f-7g8h-9i0j-1k2l-m3n4o5p6q7r8",
+      "name": "Enviar Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2,
+      "position": [
+        680,
+        300
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "smtp_credentials_id",
+          "name": "Credenciais SMTP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "console.log('Email enviado com sucesso!');\nreturn [{ json: { status: 'sucesso', mensagem: 'Email enviado com sucesso', timestamp: new Date().toISOString(), destinatario: $input.first().json.destinatario } }];"
+      },
+      "id": "4d5e6f7g-8h9i-0j1k-2l3m-n4o5p6q7r8s9",
+      "name": "Log Resultado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Cron Trigger": {
+      "main": [
+        [
+          {
+            "node": "Preparar Dados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Dados": {
+      "main": [
+        [
+          {
+            "node": "Enviar Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar Email": {
+      "main": [
+        [
+          {
+            "node": "Log Resultado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Sao_Paulo"
+  },
+  "meta": {
+    "instanceId": "c9aa7cfa-763c-4d59-ae33-afff84d50f68"
+  },
+  "triggerCount": 1,
+  "versionId": "1"
+}
